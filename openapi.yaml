@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: Smartnode HTTP API (single-endpoint spike)
+  version: 0.0.1-spike
+  description: |
+    Derived from rocket-pool/smartnode @72b831c44b5b93fcc0e16fadabff610592406197 (GPLv3).
+    Sources: rocketpool/api/network/routes.go (Read route), network/node-fee.go,
+    api/response/response.go, api/snroute/snroute.go, shared/types/api/network.go,
+    shared/services/rocketpool/network.go (client uses "GET").
+paths:
+  /api/network/node-fee:
+    get:
+      operationId: getNetworkNodeFee
+      summary: Network node fee (snroute.Read, no query/body)
+      security:
+        - {}            # allowed without token when unauthenticatedReads=true
+        - bearerAuth: []  # required otherwise (Token Scope = all endpoints)
+      responses:
+        "200": {description: success, content: {application/json: {schema: {$ref: "#/components/schemas/NodeFeeResponse"}}}}
+        "401": {description: "missing/invalid token; header WWW-Authenticate: Bearer; body APIResponse", headers: {WWW-Authenticate: {schema: {type: string}}}, content: {application/json: {schema: {$ref: "#/components/schemas/APIResponse"}}}}
+        "500": {description: "handler error (body status=error,error=msg; fields zero-valued)", content: {application/json: {schema: {$ref: "#/components/schemas/NodeFeeResponse"}}}}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
+  schemas:
+    APIResponse:
+      type: object
+      required: [status, error]
+      properties:
+        status: {type: string, description: '"success" or "error"'}
+        error: {type: string}
+    NodeFeeResponse:
+      allOf:
+        - $ref: "#/components/schemas/APIResponse"
+        - type: object
+          required: [nodeFee, minNodeFee, targetNodeFee, maxNodeFee]
+          properties:
+            nodeFee: {type: number, format: double}
+            minNodeFee: {type: number, format: double}
+            targetNodeFee: {type: number, format: double}
+            maxNodeFee: {type: number, format: double}
